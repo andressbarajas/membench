@@ -14,7 +14,7 @@ rm-elf:
 	-rm -f $(TARGET)
 
 $(TARGET): $(OBJS)
-	kos-cc -O3 -o  $(TARGET) $(OBJS) -lfastmem
+	kos-cc -O3 -o $(TARGET) $(OBJS) -lfastmem
 
 run: $(TARGET)
 	$(KOS_LOADER) $(TARGET)

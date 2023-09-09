@@ -7,7 +7,7 @@
 #include "memfuncs.h"
 #include "fastmem.h"
 
-#define SIZE 1024 * 1024
+#define SIZE 1024 * 4
 #define ITERATIONS 1
 
 int main(int argc, char **argv)
