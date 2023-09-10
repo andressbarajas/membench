@@ -7,13 +7,13 @@
 #include "memfuncs.h"
 #include "fastmem.h"
 
-#define SIZE 1024*16
+#define SIZE 1024*8 + 1//16+1
 #define ITERATIONS 1
 
 int main(int argc, char **argv)
 {
-    char src[SIZE]__attribute__((aligned(1)));
-    char dst[SIZE]__attribute__((aligned(1)));
+    char src[SIZE]__attribute__((aligned(8)));
+    char dst[SIZE]__attribute__((aligned(8)));
 
     srand((unsigned int)time(NULL));
 

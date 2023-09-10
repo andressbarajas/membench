@@ -260,84 +260,71 @@ void *memcpy_moop(void *dest, const void *src, size_t numbytes) {
 
     void *returnval = dest;
     uint32_t offset = 0;
+    uintptr_t ored = ((uintptr_t)src | (uintptr_t)dest);
 
-    while(numbytes) {
-        uintptr_t ored = ((uintptr_t)src | (uintptr_t)dest);
+    // Check 8-byte alignment for 32-byte copy
+    if(!(ored & 0x07) && numbytes >= 32) {
+        memcpy_64bit_32Bytes(dest, src, numbytes >> 5);
+        offset = numbytes & -32;
         dest = (char *)dest + offset;
         src = (char *)src + offset;
+        numbytes &= 31; // clear the last 5 bits
 
-        //printf("-------------------------\n");
-
-        // Check 8-byte alignment for 32-byte copy
-        if(!(ored & 0x07) && numbytes >= 32) {
-            memcpy_64bit_32Bytes(dest, src, numbytes >> 5);
-            offset = numbytes & -32;
-            numbytes &= 31; // clear the last 5 bits
-            //printf("memcpy_64bit_32Bytes: Left %d bytes\n", numbytes);
+        if(numbytes >= 16) {
+            goto sixteenbytes;
         }
-        // Check 4-byte alignment for 16-byte copy
-        else if(!(ored & 0x03) && numbytes >= 16) {
-            memcpy_32bit_16Bytes(dest, src, numbytes >> 4);
-            offset = numbytes & -16;
-            numbytes &= 15; // clear the last 2 bits
-
-            //printf("memcpy_32bit_16Bytes: Left %d bytes\n", numbytes);
-
-            if(numbytes >= 4) {
-                
-                dest = (char *)dest + offset;
-                src = (char *)src + offset;
-                goto fourbytes;
-            }
-            else if(numbytes > 0){
-                dest = (char *)dest + offset;
-                src = (char *)src + offset;
-                goto singlebytes;
-            }
-            else 
-                break;
+        else if(numbytes >= 4) {
+            goto fourbytes;
         }
-        // Check 8-byte alignment for 64-bit copy
-        // else if(!(ored & 0x07) && numbytes >= 8) {
-        //     memcpy_64bit(dest, src, numbytes >> 3);
-        //     offset = numbytes & -8;
-        //     numbytes &= 7; // clear the last 3 bits
-        // }
-        // Check 4-byte alignment for 32-bit copy
-        else if(!(ored & 0x03) && numbytes >= 4) {
-            
-fourbytes:
-            //printf("Copying %d bytes\n", numbytes);
-            memcpy_32bit(dest, src, numbytes >> 2);
-            offset = numbytes & -4;
-            numbytes &= 3; // clear the last 2 bits
-
-            if(numbytes) {
-                dest = (char *)dest + offset;
-                src = (char *)src + offset;
-                goto singlebytes;
-            }
-        }
-        else {
-            // numBytes always seems to be 1-3 when it reaches 
-            // this else so lets just do it the old fashioned
-            // way
-            
-            // memcpy_8bit(dest, src, numbytes);
-            // numbytes = 0; // end the loop
-singlebytes:
-            //printf("Else %d bytes\n", numbytes);
-            do {
-                *(char *)dest = *(const char *)src;
-                dest = (char *)dest + 1;
-                src = (const char *)src + 1;
-                numbytes--;
-            } while (numbytes);
-            break; // exit loop
+        else if(numbytes){
+            goto singlebytes;
         }
     }
+    // Check 4-byte alignment for 16-byte copy
+    else if(!(ored & 0x03) && numbytes >= 16) {
+sixteenbytes:
+        memcpy_32bit_16Bytes(dest, src, numbytes >> 4);
+        offset = numbytes & -16;
+        dest = (char *)dest + offset;
+        src = (char *)src + offset;
+        numbytes &= 15; // clear the last 2 bits
 
-    //printf("?????????????????????????\n");
+        if(numbytes >= 4)
+            goto fourbytes;
+        else if(numbytes)
+            goto singlebytes;
+    }
+    // Check 8-byte alignment for 64-bit copy
+    // else if(!(ored & 0x07) && numbytes >= 8) {
+    //     memcpy_64bit(dest, src, numbytes >> 3);
+    //     offset = numbytes & -8;
+    //     numbytes &= 7; // clear the last 3 bits
+    // }
+    // Check 4-byte alignment for 32-bit copy
+    else if(!(ored & 0x03) && numbytes >= 4) {
+fourbytes:
+        memcpy_32bit(dest, src, numbytes >> 2);
+        offset = numbytes & -4;
+        dest = (char *)dest + offset;
+        src = (char *)src + offset;
+        numbytes &= 3; // clear the last 2 bits
+
+        if(numbytes) {
+            goto singlebytes;
+        }
+    }
+    else {
+        // numBytes always seems to be 1-3 when it reaches 
+        // this else so lets just do it the old fashioned
+        // way
+singlebytes:
+        do {
+            *(char *)dest = *(const char *)src;
+            dest = (char *)dest + 1;
+            src = (const char *)src + 1;
+            numbytes--;
+        } while (numbytes);
+    }
 
     return returnval;
 }
