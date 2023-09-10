@@ -1,5 +1,7 @@
 #include "memfuncs.h"
 
+#include <stdio.h>
+
 //
 // These all require appropriate alignment of source and destination.
 //
@@ -100,6 +102,47 @@ void * memcpy_32bit(void *dest, const void *src, size_t len)
     );
 
     return dest;
+}
+
+// 16 Bytes at a time
+// Len is (# of total bytes/16), so it's "# of 16 Bytes"
+// Source and destination buffers must both be 4-byte aligned
+void * memcpy_32bit_16Bytes(void *dest, const void *src, size_t len)
+{
+    if(!len)
+        return dest;
+
+    void * ret_dest = dest;
+
+    uint32_t scratch_reg;
+    uint32_t scratch_reg2;
+    uint32_t scratch_reg3;
+    uint32_t scratch_reg4;
+
+    __asm__ volatile (
+        "clrs\n" // Align for parallelism (CO) - SH4a use "stc SR, Rn" instead with a dummy Rn
+        ".align 2\n"
+        "1:\n\t"
+        // *dest++ = *src++
+        "mov.l @%[in]+, %[scratch]\n\t" // (LS)
+        "mov.l @%[in]+, %[scratch2]\n\t" // (LS)
+        "mov.l @%[in]+, %[scratch3]\n\t" // (LS)
+        "add #16, %[out]\n\t" // (EX)
+        "mov.l @%[in]+, %[scratch4]\n\t" // (LS)
+        "dt %[size]\n\t" // while(--len) (EX)
+        "mov.l %[scratch4], @-%[out]\n\t" // (LS)
+        "mov.l %[scratch3], @-%[out]\n\t" // (LS)
+        "mov.l %[scratch2], @-%[out]\n\t" // (LS)
+        "mov.l %[scratch], @-%[out]\n\t" // (LS)
+        "bf.s 1b\n\t" // (BR)
+        " add #16, %[out]\n" // (EX)
+        : [in] "+&r" ((uint32_t)src), [out] "+&r" ((uint32_t)dest), [size] "+&r" (len),
+        [scratch] "=&r" (scratch_reg), [scratch2] "=&r" (scratch_reg2), [scratch3] "=&r" (scratch_reg3), [scratch4] "=&r" (scratch_reg4) // outputs
+        : // inputs
+        : "t", "memory" // clobbers
+    );
+
+    return ret_dest;
 }
 
 // 64-bit (8 bytes at a time)
@@ -216,41 +259,65 @@ void *memcpy_moop(void *dest, const void *src, size_t numbytes) {
         return dest;
 
     void *returnval = dest;
-    uint32_t offset = 0;
+    char *d = (char *)dest;
+    const char *s = (const char *)src;
+
+    // Align to 8-byte boundary 
+    while(numbytes && ((((uintptr_t)s | (uintptr_t)d) & 0x07))) {
+        *d++ = *s++;
+        numbytes--;
+    }
+    dest = d;
+    src = s;
 
     while(numbytes) {
         uintptr_t ored = ((uintptr_t)src | (uintptr_t)dest);
+        uint32_t offset = 0;
 
-        // Check 8-byte alignment for 32-byte copy
-        if((!(ored & 0x07)) && (numbytes >= 32)) {
-            memcpy_64bit_32Bytes(dest, src, numbytes >> 5);
-            offset = numbytes & -32;
-            dest = (char *)dest + offset;
-            src = (char *)src + offset;
-            numbytes &= 31; // clear the last 5 bits
+        // Check 8-byte alignment
+        if(!(ored & 0x07)) {
+            // 32-byte copy
+            if(numbytes >= 32) {
+                memcpy_64bit_32Bytes(dest, src, numbytes >> 5);
+                offset = numbytes & -32;
+                numbytes &= 31; // clear the last 5 bits
+            }
+            // 64-bit copy
+            else if(numbytes >= 8) {
+                memcpy_64bit(dest, src, numbytes >> 3);
+                offset = numbytes & -8;
+                numbytes &= 7; // clear the last 3 bits
+            }
         }
-        // Check 8-byte alignment for 64-bit copy
-        else if((!(ored & 0x07)) && (numbytes >= 8)) {
-            memcpy_64bit(dest, src, numbytes >> 3);
-            offset = numbytes & -8;
-            dest = (char *)dest + offset;
-            src = (char *)src + offset;
-            numbytes &= 7; // clear the last 3 bits
+        
+        // Check 4-byte alignment  
+        else if(!(ored & 0x03))
+        {
+            // 16-byte copy
+            if(numbytes >= 16) {
+                //printf("16------------");
+                memcpy_32bit_16Bytes(dest, src, numbytes >> 4);
+                offset = numbytes & -16;
+                numbytes &= 15; // clear the last 2 bits
+            }
+            // 32-bit copy
+            else if(numbytes >= 4) {
+                memcpy_32bit(dest, src, numbytes >> 2);
+                offset = numbytes & -4;
+                numbytes &= 3; // clear the last 2 bits
+            }
         }
-        // Check 4-byte alignment
-        else if((!(ored & 0x03)) && (numbytes >= 4)) {
-            memcpy_32bit(dest, src, numbytes >> 2);
-            offset = numbytes & -4;
-            dest = (char *)dest + offset;
-            src = (char *)src + offset;
-            numbytes &= 3; // clear the last 2 bits
-        }
+
+        ored = ((uintptr_t)src | (uintptr_t)dest);
+        dest = (char *)dest + offset;
+        src = (char *)src + offset;
+
         // Check 2-byte alignment
-        else if((!(ored & 0x01)) && (numbytes >= 2)) {
+        if((!(ored & 0x01)) && (numbytes >= 2)) {
             memcpy_16bit(dest, src, numbytes >> 1);
             offset = numbytes & -2;
-            dest = (char *)dest + (numbytes & -2);
-            src = (char *)src + (numbytes & -2);
+            dest = (char *)dest + offset;
+            src = (char *)src + offset;
             numbytes &= 1; // clear the last bit
         }
         else {

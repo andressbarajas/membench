@@ -12,8 +12,8 @@
 
 int main(int argc, char **argv)
 {
-    char src[SIZE] __attribute__((aligned(8)));
-    char dst[SIZE] __attribute__((aligned(8)));
+    char src[SIZE]; //__attribute__((aligned(1)));
+    char dst[SIZE]; //__attribute__((aligned(4)));
 
     srand((unsigned int)time(NULL));
 
