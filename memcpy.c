@@ -270,15 +270,12 @@ void *memcpy_moop(void *dest, const void *src, size_t numbytes) {
         src = (char *)src + offset;
         numbytes &= 31; // clear the last 5 bits
 
-        if(numbytes >= 16) {
+        if(numbytes >= 16)
             goto sixteenbytes;
-        }
-        else if(numbytes >= 4) {
+        else if(numbytes >= 4)
             goto fourbytes;
-        }
-        else if(numbytes){
+        else if(numbytes)
             goto singlebytes;
-        }
     }
     // Check 4-byte alignment for 16-byte copy
     else if(!(ored & 0x03) && numbytes >= 16) {
@@ -294,12 +291,6 @@ sixteenbytes:
         else if(numbytes)
             goto singlebytes;
     }
-    // Check 8-byte alignment for 64-bit copy
-    // else if(!(ored & 0x07) && numbytes >= 8) {
-    //     memcpy_64bit(dest, src, numbytes >> 3);
-    //     offset = numbytes & -8;
-    //     numbytes &= 7; // clear the last 3 bits
-    // }
     // Check 4-byte alignment for 32-bit copy
     else if(!(ored & 0x03) && numbytes >= 4) {
 fourbytes:
@@ -309,9 +300,8 @@ fourbytes:
         src = (char *)src + offset;
         numbytes &= 3; // clear the last 2 bits
 
-        if(numbytes) {
+        if(numbytes)
             goto singlebytes;
-        }
     }
     else {
         // numBytes always seems to be 1-3 when it reaches 
