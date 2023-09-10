@@ -49,6 +49,7 @@ void * memcpy_16bit(void *dest, const void *src, size_t len);
 void * memcpy_32bit(void *dest, const void *src, size_t len);
 void * memcpy_64bit(void *dest, const void *src, size_t len);
 void * memcpy_64bit_32Bytes(void *dest, const void *src, size_t len);
+void * memcpy_moop(void *dest, const void *src, size_t numbytes);
 
 void * memset_zeroes_64bit(void *dest, size_t len);
 void * memset_zeroes_32bit(void *dest, size_t len);
@@ -56,7 +57,7 @@ void * memset_zeroes_32bit(void *dest, size_t len);
 int memcmp_16bit_eq(const void *str1, const void *str2, size_t count);
 int memcmp_32bit_eq(const void *str1, const void *str2, size_t count);
 
-void * memcpy_moop(void *dest, const void *src, size_t numbytes);
+
 
 
 #endif /* __MEMFUNCS_H_ */
