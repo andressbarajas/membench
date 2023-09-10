@@ -222,38 +222,6 @@ void * memcpy_64bit_32Bytes(void *dest, const void *src, size_t len)
     return ret_dest;
 }
 
-// Set 8 bytes of 0 at a time
-// Len is (# of total bytes/8), so it's "# of 64-bits"
-// Destination must be 8-byte aligned
-// void * memset_zeroes_64bit(void *dest, size_t len)
-// {
-//     if(!len)
-//         return dest;
-
-//     _Complex float * d = (_Complex float*)((uint32_t)dest & 0x1fffffff);
-//     _Complex float * nextd = d + len;
-
-//     __asm__ volatile (
-//         "fldi0 fr0\n\t"
-//         "fldi0 fr1\n\t"
-//         "fschg\n\t" // Switch to pair move mode (FE)
-//         "dt %[size]\n\t" // Decrement and test size here once to prevent extra jump (EX 1)
-//         "clrs\n" // Align for parallelism (CO) - SH4a use "stc SR, Rn" instead with a dummy Rn
-//     ".align 2\n"
-//     "1:\n\t"
-//         // *--nextd = val
-//         "fmov.d DR0, @-%[out]\n\t" // (LS 1/1)
-//         "bf.s 1b\n\t" // (BR 1/2)
-//         " dt %[size]\n\t" // (--len) ? 0 -> T : 1 -> T (EX 1)
-//         "fschg\n" // Switch back to single move mode (FE)
-//         : [out] "+r" ((uint32_t)nextd), [size] "+&r" (len) // outputs
-//         : // inputs
-//         : "t", "fr0", "fr1", "memory" // clobbers
-//     );
-
-//     return dest;
-// }
-
 void *memcpy_moop(void *dest, const void *src, size_t numbytes) {
     if (src == dest || numbytes == 0)
         return dest;
@@ -308,57 +276,14 @@ fourbytes:
         // this else so lets just do it the old fashioned
         // way
 singlebytes:
+        char *d = (char *)dest;
+        const char *s = (const char *)src;
+
         do {
-            *(char *)dest = *(const char *)src;
-            dest = (char *)dest + 1;
-            src = (const char *)src + 1;
+            *d++ = *s++;
             numbytes--;
         } while (numbytes);
     }
 
     return returnval;
 }
-
-// while(numbytes)
-// {
-//     if(( !( ((unsigned int)src | (unsigned int)dest) & 0x07) )&&
-//         (numbytes >= 32) ) {
-//         memcpy_64bit_32Bytes(dest, src, numbytes >> 5);
-//         offset = numbytes & -32;
-//         dest = (char *)dest + offset;
-//         src = (char *)src + offset;
-//         numbytes -= offset;
-//     }
-//     else if( // Check 8-byte alignment for 64-bit copy
-// //	  if( // Check 8-byte alignment for 64-bit copy
-//         ( !( ((unsigned int)src | (unsigned int)dest) & 0x07) ) &&
-//         (numbytes >= 8)) {
-//         memcpy_64bit(dest, src, numbytes >> 3);
-//         offset = numbytes & -8;
-//         dest = (char *)dest + offset;
-//         src = (char *)src + offset;
-//         numbytes -= offset;
-//     }
-//     else if( // Check 4-byte alignment
-//             ( !( ((unsigned int)src | (unsigned int)dest) & 0x03) ) &&
-//             (numbytes >= 4)) {
-//         memcpy_32bit(dest, src, numbytes >> 2);
-//         offset = numbytes & -4;
-//         dest = (char *)dest + offset;
-//         src = (char *)src + offset;
-//         numbytes -= offset;
-//     }
-//     else if(( !( ((unsigned int)src | (unsigned int)dest) & 0x01) ) &&
-//             (numbytes >= 2)) {
-//         memcpy_16bit(dest, src, numbytes >> 1);
-//         offset = numbytes & -2;
-//         dest = (char *)dest + offset;
-//         src = (char *)src + offset;
-//         numbytes -= offset;
-//     }
-//     else if(numbytes) // No alignment? Well, that really stinks!
-//     {
-//         memcpy_8bit(dest, src, numbytes);
-//         numbytes = 0;
-//     }
-// }
