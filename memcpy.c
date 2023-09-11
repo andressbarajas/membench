@@ -1,6 +1,7 @@
 #include "memfuncs.h"
 
 #include <stdio.h>
+#include <string.h>
 
 //
 // These all require appropriate alignment of source and destination.
@@ -283,4 +284,85 @@ singlebytes:
     }
 
     return returnval;
+}
+
+static void * memcpy_64bit_32Bytes_zcrc(void *dest, const void *src, size_t len) {
+    if(!len)
+        return dest;
+
+    void * ret_dest = dest;
+
+    _Complex float double_scratch;
+    _Complex float double_scratch2;
+    _Complex float double_scratch3;
+    _Complex float double_scratch4;
+
+    __asm__ volatile (
+        "fschg\n\t" // Switch to pair move mode (FE)
+        "clrs\n" // Align for parallelism (CO) - SH4a use "stc SR, Rn" instead with a dummy Rn
+        ".align 2\n"
+        "1:\n\t"
+        // *dest++ = *src++
+        "fmov.d @%[in]+, %[scratch]\n\t" // (LS)
+        "fmov.d @%[in]+, %[scratch2]\n\t" // (LS)
+        "fmov.d @%[in]+, %[scratch3]\n\t" // (LS)
+        "fmov.d @%[in]+, %[scratch4]\n\t" // (LS)
+        "dt %[size]\n\t" // while(--len) (EX)
+        "fmov.d %[scratch], @%[out]\n\t" // (LS)
+        "add #8, %[out]\n\t" // (EX)
+        "fmov.d %[scratch2], @%[out]\n\t" // (LS)
+        "add #8, %[out]\n\t" // (EX)
+        "fmov.d %[scratch3], @%[out]\n\t" // (LS)
+        "add #8, %[out]\n\t" // (EX)
+        "fmov.d %[scratch4], @%[out]\n\t" // (LS)
+        "add #8, %[out]\n\t" // (EX)
+        "bf 1b\n\t" // (BR)
+        "fschg\n" // Switch back to single move mode (FE)
+        : [in] "+&r" ((uint32_t)src), [out] "+&r" ((uint32_t)dest), [size] "+&r" (len),
+        [scratch] "=&d" (double_scratch), [scratch2] "=&d" (double_scratch2), [scratch3] "=&d" (double_scratch3), [scratch4] "=&d" (double_scratch4) // outputs
+        : // inputs
+        : "t", "memory" // clobbers
+    );
+
+    return ret_dest;
+}
+
+void *memcpy_zcrc(void *dest, const void *src, size_t numbytes)
+{
+	void *returnval = dest;
+	uintptr_t mask;
+	size_t len;
+
+	if (src == dest || numbytes == 0)
+		return dest;
+
+	mask = (uintptr_t)src | (uintptr_t)dest;
+
+	if (((uintptr_t)src & 0x7) == ((uintptr_t)dest & 0x7)) {
+		len = 0x8 - (mask & 0x7);
+
+		if (len < 0x8) {
+			if (len > numbytes)
+				len = numbytes;
+
+			memcpy(dest, src, len);
+			dest += len;
+			src += len;
+			numbytes -= len;
+		}
+
+		/* Source and destination addresses are aligned to 8 bytes now. */
+
+		if (numbytes >= 32) {
+			memcpy_64bit_32Bytes_zcrc(dest, src, numbytes >> 5);
+			dest += numbytes & ~0x1f;
+			src += numbytes & ~0x1f;
+			numbytes &= 0x1f;
+		}
+	}
+
+	if (numbytes)
+		memcpy(dest, src, numbytes);
+
+	return returnval;
 }
