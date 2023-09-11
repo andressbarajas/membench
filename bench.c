@@ -7,19 +7,19 @@
 #include "memfuncs.h"
 #include "fastmem.h"
 
-#define SIZE 1024*8 + 1//16+1
+#define SIZE 1024  //16+1
 #define ITERATIONS 1
 
 int main(int argc, char **argv)
 {
-    char src[SIZE]__attribute__((aligned(8)));
-    char dst[SIZE]__attribute__((aligned(8)));
+    char src[SIZE]__attribute__((aligned(1)));
+    char dst[SIZE]__attribute__((aligned(1)));
 
     srand((unsigned int)time(NULL));
 
     int i, j;
 
-    printf("Bytes,Memcpy,Memcpy_Moop,Memcpy_Fast\n"); // Header for CSV format
+    printf("Bytes,Memmove,Memmove_Moop,Memmove_Fast\n"); // Header for CSV format
 
     for(j = 0; j < SIZE; j++)
     {
@@ -32,7 +32,7 @@ int main(int argc, char **argv)
         for(i = 0; i < ITERATIONS; ++i)
         {
             uint64_t start = timer_ns_gettime64();
-            memcpy(dst,src,j);
+            memmove(dst,src,j);
             first_total += (timer_ns_gettime64() - start);
             assert(!memcmp(dst, src, j));  
         }
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
         for(i = 0; i < ITERATIONS; ++i)
         {
             uint64_t start = timer_ns_gettime64();
-            memcpy_moop(dst,src,j);
+            memmove_moop(dst,src,j);
             second_total += (timer_ns_gettime64() - start);
             assert(!memcmp(dst, src, j));  
         }
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
         for(i = 0; i < ITERATIONS; ++i)
         {
             uint64_t start = timer_ns_gettime64();
-            memcpy_fast(dst,src,j);
+            memmove_fast(dst,src,j);
             third_total += (timer_ns_gettime64() - start);
             assert(!memcmp(dst, src, j));  
         }

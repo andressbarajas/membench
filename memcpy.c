@@ -14,8 +14,7 @@
 // 8-bit (1 bytes at a time)
 // Len is (# of total bytes/1), so it's "# of 8-bits"
 // Source and destination buffers must both be 1-byte aligned (aka no alignment)
-void * memcpy_8bit(void *dest, const void *src, size_t len)
-{
+void * memcpy_8bit(void *dest, const void *src, size_t len) {
     if(!len)
         return dest;
 
@@ -45,8 +44,7 @@ void * memcpy_8bit(void *dest, const void *src, size_t len)
 // 16-bit (2 bytes at a time)
 // Len is (# of total bytes/2), so it's "# of 16-bits"
 // Source and destination buffers must both be 2-byte aligned
-void * memcpy_16bit(void *dest, const void *src, size_t len)
-{
+void * memcpy_16bit(void *dest, const void *src, size_t len) {
     if(!len)
         return dest;
 
@@ -76,8 +74,7 @@ void * memcpy_16bit(void *dest, const void *src, size_t len)
 // 32-bit (4 bytes at a time)
 // Len is (# of total bytes/4), so it's "# of 32-bits"
 // Source and destination buffers must both be 4-byte aligned
-void * memcpy_32bit(void *dest, const void *src, size_t len)
-{
+void * memcpy_32bit(void *dest, const void *src, size_t len) {
     if(!len)
         return dest;
 
@@ -107,8 +104,7 @@ void * memcpy_32bit(void *dest, const void *src, size_t len)
 // 16 Bytes at a time
 // Len is (# of total bytes/16), so it's "# of 16 Bytes"
 // Source and destination buffers must both be 4-byte aligned
-void * memcpy_32bit_16Bytes(void *dest, const void *src, size_t len)
-{
+void * memcpy_32bit_16Bytes(void *dest, const void *src, size_t len) {
     if(!len)
         return dest;
 
@@ -148,8 +144,7 @@ void * memcpy_32bit_16Bytes(void *dest, const void *src, size_t len)
 // 64-bit (8 bytes at a time)
 // Len is (# of total bytes/8), so it's "# of 64-bits"
 // Source and destination buffers must both be 8-byte aligned
-void * memcpy_64bit(void *dest, const void *src, size_t len)
-{
+void * memcpy_64bit(void *dest, const void *src, size_t len) {
     if(!len)
         return dest;
 
@@ -182,8 +177,7 @@ void * memcpy_64bit(void *dest, const void *src, size_t len)
 // 32 Bytes at a time
 // Len is (# of total bytes/32), so it's "# of 32 Bytes"
 // Source and destination buffers must both be 8-byte aligned
-void * memcpy_64bit_32Bytes(void *dest, const void *src, size_t len)
-{
+void * memcpy_64bit_32Bytes(void *dest, const void *src, size_t len) {
     if(!len)
         return dest;
 
@@ -221,6 +215,8 @@ void * memcpy_64bit_32Bytes(void *dest, const void *src, size_t len)
 
     return ret_dest;
 }
+
+#define MAX_NUMBYTES_32BYTE_ALIGNED  1024*8
 
 void *memcpy_moop(void *dest, const void *src, size_t numbytes) {
     if (src == dest || numbytes == 0)
@@ -283,6 +279,9 @@ singlebytes:
             *d++ = *s++;
             numbytes--;
         } while (numbytes);
+
+        // dest = d;
+        // src = s;
     }
 
     return returnval;

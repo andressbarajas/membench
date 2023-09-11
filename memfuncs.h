@@ -44,15 +44,31 @@
 // through in startup.S. As such, the AND mask 0x1fffffff comes in handy here.
 //
 
+// MEMCPY
 void * memcpy_8bit(void *dest, const void *src, size_t len);
 void * memcpy_16bit(void *dest, const void *src, size_t len);
 void * memcpy_32bit(void *dest, const void *src, size_t len);
+void * memcpy_32bit_16Bytes(void *dest, const void *src, size_t len);
 void * memcpy_64bit(void *dest, const void *src, size_t len);
 void * memcpy_64bit_32Bytes(void *dest, const void *src, size_t len);
 void * memcpy_moop(void *dest, const void *src, size_t numbytes);
 
-void * memset_zeroes_64bit(void *dest, size_t len);
+// MEMMOVE
+void * memmove_8bit(void *dest, const void *src, size_t len);
+void * memmove_16bit(void *dest, const void *src, size_t len);
+void * memmove_32bit(void *dest, const void *src, size_t len);
+void * memmove_64bit(void *dest, const void *src, size_t len);
+void * memmove_moop(void *dest, const void *src, size_t numbytes);
+
+// MEMSET
+void * memset_8bit(void *dest, const uint8_t val, size_t len);
+void * memset_16bit(void *dest, const uint16_t val, size_t len);
+void * memset_32bit(void *dest, const uint32_t val, size_t len);
+void * memset_64bit(void *dest, const uint32_t val, size_t len);
 void * memset_zeroes_32bit(void *dest, size_t len);
+void * memset_zeroes_64bit(void *dest, size_t len);
+void * memset_moop(void *dest, const uint32_t val, size_t numbytes);
+
 
 int memcmp_16bit_eq(const void *str1, const void *str2, size_t count);
 int memcmp_32bit_eq(const void *str1, const void *str2, size_t count);
