@@ -216,8 +216,6 @@ void * memcpy_64bit_32Bytes(void *dest, const void *src, size_t len) {
     return ret_dest;
 }
 
-#define MAX_NUMBYTES_32BYTE_ALIGNED  1024*8
-
 void *memcpy_moop(void *dest, const void *src, size_t numbytes) {
     if (src == dest || numbytes == 0)
         return dest;
