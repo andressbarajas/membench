@@ -256,31 +256,12 @@ fourbytes:
         if(numbytes)
             goto singlebytes;
     }
-    // Check 2-byte alignment
-    else if(!(ored & 0x01) && numbytes >= 2) {
-        memmove_16bit(dest, src, numbytes >> 1);
-        offset = numbytes & -2;
-        dest = (char *)dest + offset;
-        src = (char *)src + offset;
-        numbytes -= offset;
-    }
     else {
         // numBytes always seems to be 1-3 when it reaches 
         // this else so lets just do it the old fashioned
         // way
 singlebytes:
         memmove_8bit(dest, src, numbytes);
-
-        // char *d = (char *)dest;
-        // const char *s = (const char *)src;
-
-        // do {
-        //     *d++ = *s++;
-        //     numbytes--;
-        // } while (numbytes);
-
-        // dest = d;
-        // src = s;
     }  
 
     return returnval;

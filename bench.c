@@ -7,13 +7,13 @@
 #include "memfuncs.h"
 #include "fastmem.h"
 
-#define SIZE 1024  //16+1
+#define SIZE 1024 * 4 //16+1
 #define ITERATIONS 1
 
 int main(int argc, char **argv)
 {
-    char src[SIZE]__attribute__((aligned(1)));
-    char dst[SIZE]__attribute__((aligned(1)));
+    char src[SIZE]__attribute__((aligned(8)));
+    char dst[SIZE]__attribute__((aligned(8)));
 
     srand((unsigned int)time(NULL));
 
@@ -32,9 +32,9 @@ int main(int argc, char **argv)
         for(i = 0; i < ITERATIONS; ++i)
         {
             uint64_t start = timer_ns_gettime64();
-            memmove(dst,src,j);
+            memset(src,0,j);
             first_total += (timer_ns_gettime64() - start);
-            assert(!memcmp(dst, src, j));  
+            assert(!memcmp(src, (char[SIZE]){0}, j));  
         }
 
         for (i = 0; i < j; i++) {
@@ -45,9 +45,9 @@ int main(int argc, char **argv)
         for(i = 0; i < ITERATIONS; ++i)
         {
             uint64_t start = timer_ns_gettime64();
-            memmove_moop(dst,src,j);
+            memset_moop(src,0,j);
             second_total += (timer_ns_gettime64() - start);
-            assert(!memcmp(dst, src, j));  
+            assert(!memcmp(src, (char[SIZE]){0}, j));  
         }
 
         for (i = 0; i < j; i++) {
@@ -58,9 +58,9 @@ int main(int argc, char **argv)
         for(i = 0; i < ITERATIONS; ++i)
         {
             uint64_t start = timer_ns_gettime64();
-            memmove_fast(dst,src,j);
+            memset_fast(src,0,j);
             third_total += (timer_ns_gettime64() - start);
-            assert(!memcmp(dst, src, j));  
+            assert(!memcmp(src, (char[SIZE]){0}, j));  
         }
 
         printf("%d,%llu,%llu,%llu\n", j, first_total, second_total, third_total);

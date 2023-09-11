@@ -181,4 +181,82 @@ void * memset_moop(void *dest, const uint32_t val, size_t numbytes) {
         return dest;
 
     void *returnval = dest;
+    uint32_t offset = 0;
+
+    if(val) {
+        // Check 8-byte alignment for 8-byte copy
+        if(!((uintptr_t)dest & 0x07) && numbytes >= 8) {
+            memset_64bit(dest, val, numbytes >> 3);
+            offset = numbytes & -8;
+            dest = (char *)dest + offset;
+            numbytes &= 7; // clear the last 3 bits
+
+            if(numbytes >= 4)
+                goto fourbytes;
+            else if(numbytes)
+                goto singlebytes;
+        }
+        // Check 4-byte alignment for 4-byte copy
+        else if(!((uintptr_t)dest & 0x03) && numbytes >= 4) {
+fourbytes:
+            memset_32bit(dest, val, numbytes >> 2);
+            offset = numbytes & -4;
+            dest = (char *)dest + offset;
+            numbytes &= 3; // clear the last 2 bits
+
+            if(numbytes)
+                goto singlebytes;
+        }
+        else {
+            // numBytes always seems to be 1-3 when it reaches 
+            // this else so lets just do it the old fashioned
+            // way
+singlebytes:
+            char *d = (char *)dest;
+
+            do {
+                *d++ = val;
+                numbytes--;
+            } while (numbytes);
+        } 
+    }
+    else {
+        // Check 8-byte alignment for 8-byte copy
+        if(!((uintptr_t)dest & 0x07) && numbytes >= 8) {
+            memset_zeroes_64bit(dest, numbytes >> 3);
+            offset = numbytes & -8;
+            dest = (char *)dest + offset;
+            numbytes &= 7; // clear the last 3 bits
+
+            if(numbytes >= 4)
+                goto fourbyteszeros;
+            else if(numbytes)
+                goto singlebyteszeros;
+        }
+        // Check 4-byte alignment for 4-byte copy
+        else if(!((uintptr_t)dest & 0x03) && numbytes >= 4) {
+fourbyteszeros:
+            memset_zeroes_32bit(dest, numbytes >> 2);
+            offset = numbytes & -4;
+            dest = (char *)dest + offset;
+            numbytes &= 3; // clear the last 2 bits
+
+            if(numbytes)
+                goto singlebyteszeros;
+        }
+        else {
+            // numBytes always seems to be 1-3 when it reaches 
+            // this else so lets just do it the old fashioned
+            // way
+singlebyteszeros:
+            char *d = (char *)dest;
+
+            do {
+                *d++ = 0;
+                numbytes--;
+            } while (numbytes);
+        } 
+    }
+    
+    return returnval;
 }

@@ -1,7 +1,7 @@
 
 TARGET = memcpymark.elf
 
-OBJS = bench.o memcpy.o memmove.o
+OBJS = bench.o memcpy.o memmove.o memset.o
 
 all: rm-elf $(TARGET)
 

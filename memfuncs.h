@@ -69,11 +69,4 @@ void * memset_zeroes_32bit(void *dest, size_t len);
 void * memset_zeroes_64bit(void *dest, size_t len);
 void * memset_moop(void *dest, const uint32_t val, size_t numbytes);
 
-
-int memcmp_16bit_eq(const void *str1, const void *str2, size_t count);
-int memcmp_32bit_eq(const void *str1, const void *str2, size_t count);
-
-
-
-
 #endif /* __MEMFUNCS_H_ */
