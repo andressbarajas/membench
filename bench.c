@@ -23,6 +23,14 @@ static inline unsigned int get_align(void)
     return rand() % 8;
 }
 
+static inline void cache_flush(void *src, void *dst, size_t len)
+{
+    dcache_flush_range((uint32_t)dst, len);
+    dcache_inval_range((uint32_t)dst, len);
+    dcache_flush_range((uint32_t)src, len);
+    dcache_inval_range((uint32_t)src, len);
+}
+
 int main(int argc, char **argv)
 {
     char src[SIZE + 8]__attribute__((aligned(32)));
@@ -48,6 +56,7 @@ int main(int argc, char **argv)
         {
             align = get_align();
             align2 = get_align();
+            cache_flush(&src[align], &dst[align], j);
 
 	    v = irq_disable();
             uint64_t start = timer_ns_gettime64();
@@ -67,6 +76,7 @@ int main(int argc, char **argv)
         {
             align = get_align();
             align2 = get_align();
+            cache_flush(&src[align], &dst[align], j);
 
 	    v = irq_disable();
             uint64_t start = timer_ns_gettime64();
@@ -86,6 +96,7 @@ int main(int argc, char **argv)
         {
             align = get_align();
             align2 = get_align();
+            cache_flush(&src[align], &dst[align], j);
 
 	    v = irq_disable();
             uint64_t start = timer_ns_gettime64();
@@ -101,6 +112,7 @@ int main(int argc, char **argv)
         {
             align = get_align();
             align2 = get_align();
+            cache_flush(&src[align], &dst[align], j);
 
 	    v = irq_disable();
             uint64_t start = timer_ns_gettime64();
@@ -116,6 +128,7 @@ int main(int argc, char **argv)
         {
             align = get_align();
             align2 = get_align();
+            cache_flush(&src[align], &dst[align], j);
 
             v = irq_disable();
             uint64_t start = timer_ns_gettime64();
