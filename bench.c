@@ -1,5 +1,6 @@
 
 #include <kos.h>
+#include <arch/irq.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,6 +27,7 @@ int main(int argc, char **argv)
 {
     char src[SIZE + 8]__attribute__((aligned(32)));
     char dst[SIZE + 8]__attribute__((aligned(32)));
+    int v;
 
     srand((unsigned int)time(NULL));
 
@@ -47,9 +49,12 @@ int main(int argc, char **argv)
             align = get_align();
             align2 = get_align();
 
+	    v = irq_disable();
             uint64_t start = timer_ns_gettime64();
             memcpy(&dst[align], &src[align2], j);
             first_total += (timer_ns_gettime64() - start);
+	    irq_restore(v);
+
             assert(!memcmp(&dst[align], &src[align2], j));
         }
 
@@ -63,9 +68,12 @@ int main(int argc, char **argv)
             align = get_align();
             align2 = get_align();
 
+	    v = irq_disable();
             uint64_t start = timer_ns_gettime64();
             memcpy_moop(&dst[align], &src[align2], j);
             second_total += (timer_ns_gettime64() - start);
+	    irq_restore(v);
+
             assert(!memcmp(&dst[align], &src[align2], j));
         }
 
@@ -79,9 +87,12 @@ int main(int argc, char **argv)
             align = get_align();
             align2 = get_align();
 
+	    v = irq_disable();
             uint64_t start = timer_ns_gettime64();
             memcpy_zcrc(&dst[align], &src[align2], j);
             third_total += (timer_ns_gettime64() - start);
+	    irq_restore(v);
+
             assert(!memcmp(&dst[align], &src[align2], j));
         }
 
@@ -91,9 +102,12 @@ int main(int argc, char **argv)
             align = get_align();
             align2 = get_align();
 
+	    v = irq_disable();
             uint64_t start = timer_ns_gettime64();
             memcpy_fast(&dst[align], &src[align2], j);
             fourth_total += (timer_ns_gettime64() - start);
+	    irq_restore(v);
+
             assert(!memcmp(&dst[align], &src[align2], j));
         }
 
