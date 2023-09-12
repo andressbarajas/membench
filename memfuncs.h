@@ -53,6 +53,7 @@ void * memcpy_64bit(void *dest, const void *src, size_t len);
 void * memcpy_64bit_32Bytes(void *dest, const void *src, size_t len);
 void * memcpy_moop(void *dest, const void *src, size_t numbytes);
 void * memcpy_zcrc(void *dest, const void *src, size_t numbytes);
+void * memcpy_dreamhal(void *dest, const void *src, size_t numbytes);
 
 // MEMMOVE
 void * memmove_8bit(void *dest, const void *src, size_t len);

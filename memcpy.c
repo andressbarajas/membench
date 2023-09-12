@@ -367,3 +367,88 @@ void *memcpy_zcrc(void *dest, const void *src, size_t numbytes)
 
 	return returnval;
 }
+
+static void * memcpy_64bit_32Bytes_dreamhal(void *dest, const void *src, size_t len)
+{
+  void * ret_dest = dest;
+
+  if(!len)
+  {
+    return ret_dest;
+  }
+
+  _Complex float double_scratch;
+  _Complex float double_scratch2;
+  _Complex float double_scratch3;
+  _Complex float double_scratch4;
+
+  asm volatile (
+    "fschg\n\t" // Switch to pair move mode (FE)
+    "clrs\n" // Align for parallelism (CO) - SH4a use "stc SR, Rn" instead with a dummy Rn
+  ".align 2\n"
+  "1:\n\t"
+    // *dest++ = *src++
+    "pref @%[out]\n\t" // pref dest (LS)
+    "fmov.d @%[in]+, %[scratch]\n\t" // (LS)
+    "fmov.d @%[in]+, %[scratch2]\n\t" // (LS)
+    "fmov.d @%[in]+, %[scratch3]\n\t" // (LS)
+    "fmov.d @%[in]+, %[scratch4]\n\t" // (LS)
+    "add #32, %[out]\n\t" // (EX)
+    "pref @%[in]\n\t" // pref the next iteration of src (LS)
+    "dt %[size]\n\t" // while(--len) (EX)
+    "fmov.d %[scratch4], @-%[out]\n\t" // (LS)
+    "fmov.d %[scratch3], @-%[out]\n\t" // (LS)
+    "fmov.d %[scratch2], @-%[out]\n\t" // (LS)
+    "fmov.d %[scratch], @-%[out]\n\t" // (LS)
+    "bf.s 1b\n\t" // (BR)
+    " add #32, %[out]\n\t" // (EX)
+    "fschg\n" // Switch back to single move mode (FE)
+    : [in] "+&r" ((uint32_t)src), [out] "+&r" ((uint32_t)dest), [size] "+&r" (len),
+    [scratch] "=&d" (double_scratch), [scratch2] "=&d" (double_scratch2), [scratch3] "=&d" (double_scratch3), [scratch4] "=&d" (double_scratch4) // outputs
+    : // inputs
+    : "t", "memory" // clobbers
+  );
+
+  return ret_dest;
+}
+
+void *memcpy_dreamhal(void *dest, const void *src, size_t numbytes)
+{
+	void *returnval = dest;
+	uintptr_t mask;
+	size_t len, i;
+
+	if (src == dest || numbytes == 0)
+		return dest;
+
+	mask = (uintptr_t)src | (uintptr_t)dest;
+
+	if (((uintptr_t)src & 0x1f) != ((uintptr_t)dest & 0x1f)) {
+		memcpy(dest, src, numbytes);
+	} else {
+		len = 0x20 - (mask & 0x1f);
+
+		if (len < 0x20) {
+			if (len > numbytes)
+				len = numbytes;
+			numbytes -= len;
+
+			while (len--)
+				*(char *)dest++ = *(char *)src++;
+		}
+
+		/* Source and destination addresses are aligned to 32 bytes now. */
+
+		if (numbytes >= 32) {
+			memcpy_64bit_32Bytes_dreamhal(dest, src, numbytes >> 5);
+			dest += numbytes & ~0x1f;
+			src += numbytes & ~0x1f;
+			numbytes &= 0x1f;
+		}
+
+		while (numbytes--)
+			*(char *)dest++ = *(char *)src++;
+	}
+
+	return returnval;
+}
