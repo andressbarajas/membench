@@ -331,24 +331,25 @@ void *memcpy_zcrc(void *dest, const void *src, size_t numbytes)
 {
 	void *returnval = dest;
 	uintptr_t mask;
-	size_t len;
+	size_t len, i;
 
 	if (src == dest || numbytes == 0)
 		return dest;
 
 	mask = (uintptr_t)src | (uintptr_t)dest;
 
-	if (((uintptr_t)src & 0x7) == ((uintptr_t)dest & 0x7)) {
+	if (((uintptr_t)src & 0x7) != ((uintptr_t)dest & 0x7)) {
+		memcpy(dest, src, numbytes);
+	} else {
 		len = 0x8 - (mask & 0x7);
 
 		if (len < 0x8) {
 			if (len > numbytes)
 				len = numbytes;
-
-			memcpy(dest, src, len);
-			dest += len;
-			src += len;
 			numbytes -= len;
+
+			while (len--)
+				*(char *)dest++ = *(char *)src++;
 		}
 
 		/* Source and destination addresses are aligned to 8 bytes now. */
@@ -359,10 +360,10 @@ void *memcpy_zcrc(void *dest, const void *src, size_t numbytes)
 			src += numbytes & ~0x1f;
 			numbytes &= 0x1f;
 		}
-	}
 
-	if (numbytes)
-		memcpy(dest, src, numbytes);
+		while (numbytes--)
+			*(char *)dest++ = *(char *)src++;
+	}
 
 	return returnval;
 }
